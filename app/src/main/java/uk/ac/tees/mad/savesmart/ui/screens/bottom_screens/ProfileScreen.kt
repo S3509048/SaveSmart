@@ -7,6 +7,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -18,12 +19,15 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.firebase.auth.FirebaseAuth
 import uk.ac.tees.mad.savesmart.ui.screens.components.profile_screen.CreateGoalDialog
 import uk.ac.tees.mad.savesmart.viewmodel.GoalViewModel
+
 
 // Colors
 private val PrimaryGreen = Color(0xFF4CAF50)
@@ -32,11 +36,13 @@ private val DarkGreen = Color(0xFF2E7D32)
 private val BackgroundLight = Color(0xFFF5F5F5)
 private val TextDark = Color(0xFF212121)
 private val TextLight = Color(0xFF757575)
+private val ErrorRed = Color(0xFFD32F2F)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     modifier: Modifier = Modifier,
+    popBack:()->Unit,
     onLogout: () -> Unit = {},
     viewModel: GoalViewModel = hiltViewModel()
 ) {
@@ -44,10 +50,26 @@ fun ProfileScreen(
     val currentUser = FirebaseAuth.getInstance().currentUser
     var showCreateGoalDialog by remember { mutableStateOf(false) }
     var showCurrencyDialog by remember { mutableStateOf(false) }
+    var showUpdateUsernameDialog by remember { mutableStateOf(false) }
     val createGoalState = viewModel.createGoalState
+
+    val updateUsernameState = viewModel.updateUsernameState
+
+    // Track username for refresh
+    var displayName by remember { mutableStateOf(currentUser?.displayName ?: "User") }
 
 
     val dashboardState by viewModel.dashboardState.collectAsState()
+
+    // Handle username update success
+    LaunchedEffect(updateUsernameState.isSuccess) {
+        if (updateUsernameState.isSuccess) {
+            showUpdateUsernameDialog = false
+            displayName = FirebaseAuth.getInstance().currentUser?.displayName ?: "User"
+            Toast.makeText(context, "Username updated successfully!", Toast.LENGTH_SHORT).show()
+            viewModel.resetUsernameState()
+        }
+    }
     // Handle goal creation success
     LaunchedEffect(createGoalState.isSuccess) {
         if (createGoalState.isSuccess) {
@@ -105,13 +127,30 @@ fun ProfileScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // User Name
-                    Text(
-                        text = currentUser?.displayName ?: "User",
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = DarkGreen
-                    )
+                    // User Name with Edit Icon
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = displayName,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = DarkGreen
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        IconButton(
+                            onClick = { showUpdateUsernameDialog = true },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Edit Username",
+                                tint = PrimaryGreen,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
 
                     Spacer(modifier = Modifier.height(4.dp))
 
@@ -295,6 +334,7 @@ fun ProfileScreen(
             isLoading = createGoalState.isLoading,
             onCreateClick = {
                 viewModel.createGoal {
+                    popBack()
                     // Success handled in LaunchedEffect
                 }
             },
@@ -321,6 +361,125 @@ fun ProfileScreen(
             isUpdating = dashboardState.isLoading
         )
     }
+
+    // Update Username Dialog
+    if (showUpdateUsernameDialog) {
+        UpdateUsernameDialog(
+            currentUsername = displayName,
+            newUsername = viewModel.newUsername,
+            onUsernameChange = { viewModel.updateNewUsername(it) },
+            onDismiss = {
+                if (!updateUsernameState.isLoading) {
+                    showUpdateUsernameDialog = false
+                    viewModel.resetUsernameState()
+                }
+            },
+            onUpdateClick = {
+                viewModel.updateUsername {
+                    // Success handled in LaunchedEffect
+                }
+            },
+            errorMessage = updateUsernameState.error,
+            isLoading = updateUsernameState.isLoading
+        )
+    }
+}
+
+@Composable
+private fun UpdateUsernameDialog(
+    currentUsername: String,
+    newUsername: String,
+    onUsernameChange: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onUpdateClick: () -> Unit,
+    errorMessage: String?,
+    isLoading: Boolean
+) {
+    AlertDialog(
+        onDismissRequest = { if (!isLoading) onDismiss() },
+        title = {
+            Text(
+                text = "Update Username",
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column {
+                Text(
+                    text = "Current: $currentUsername",
+                    fontSize = 13.sp,
+                    color = TextLight,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                OutlinedTextField(
+                    value = newUsername,
+                    onValueChange = onUsernameChange,
+                    label = { Text("New Username") },
+                    placeholder = { Text("Enter new username") },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            tint = PrimaryGreen
+                        )
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Text,
+//                        imeAction = ImeAction.Done
+                    ),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = PrimaryGreen,
+                        focusedLabelColor = PrimaryGreen,
+                        cursorColor = PrimaryGreen
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    enabled = !isLoading
+                )
+
+                // Error Message
+                if (errorMessage != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = errorMessage,
+                        color = ErrorRed,
+                        fontSize = 12.sp,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Start
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onUpdateClick,
+                enabled = !isLoading && newUsername.isNotEmpty(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = PrimaryGreen
+                )
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp,
+                        color = Color.White
+                    )
+                } else {
+                    Text("Update")
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                enabled = !isLoading
+            ) {
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 
@@ -346,49 +505,49 @@ private fun CurrencyUpdateDialog(
         title = { Text("Update Currency") },
         text = {
             Column {
-                if (goals.isEmpty()) {
-                    Text(
-                        "No goals found. Create a goal first.",
-                        color = TextLight
-                    )
-                } else {
-                    Text(
-                        "This will update currency for all ${goals.size} goal${if (goals.size != 1) "s" else ""}.",
-                        fontSize = 14.sp,
-                        color = TextDark
-                    )
+//                if (goals.isEmpty()) {
+//                    Text(
+//                        "No goals found. Create a goal first.",
+//                        color = TextLight
+//                    )
+//                } else {
+                Text(
+                    "This will update currency for all ${goals.size} goal${if (goals.size != 1) "s" else ""}.",
+                    fontSize = 14.sp,
+                    color = TextDark
+                )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                    currencies.forEach { (code, name) ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .selectable(
-                                    selected = selectedCurrency == code,
-                                    onClick = { selectedCurrency = code },
-                                    enabled = !isUpdating
-                                )
-                                .padding(vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
+                currencies.forEach { (code, name) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(
                                 selected = selectedCurrency == code,
                                 onClick = { selectedCurrency = code },
                                 enabled = !isUpdating
                             )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = name,
-                                fontSize = 15.sp
-                            )
-                        }
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = selectedCurrency == code,
+                            onClick = { selectedCurrency = code },
+                            enabled = !isUpdating
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = name,
+                            fontSize = 15.sp
+                        )
                     }
                 }
             }
+
         },
         confirmButton = {
-            if (goals.isNotEmpty()) {
+//            if (goals.isNotEmpty()) {
                 Button(
                     onClick = { onCurrencySelected(selectedCurrency) },
                     enabled = !isUpdating
@@ -403,7 +562,7 @@ private fun CurrencyUpdateDialog(
                         Text("Update")
                     }
                 }
-            }
+//            }
         },
         dismissButton = {
             TextButton(
