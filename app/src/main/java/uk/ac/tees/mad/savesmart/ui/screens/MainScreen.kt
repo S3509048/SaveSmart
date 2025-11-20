@@ -1,9 +1,6 @@
 package uk.ac.tees.mad.savesmart.ui.screens
 
-import android.R.attr.type
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -15,10 +12,6 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import uk.ac.tees.mad.savesmart.navigation.bottom_navigation.BottomNavScreen
 import uk.ac.tees.mad.savesmart.navigation.bottom_navigation.bottomNavScreens
-import uk.ac.tees.mad.savesmart.ui.screens.bottom_screens.AddSavingScreen
-import uk.ac.tees.mad.savesmart.ui.screens.bottom_screens.DashboardScreen
-import uk.ac.tees.mad.savesmart.ui.screens.bottom_screens.MotivationScreen
-import uk.ac.tees.mad.savesmart.ui.screens.bottom_screens.ProfileScreen
 
 @Composable
 fun MainScreen(
@@ -83,21 +76,21 @@ fun MainScreen(
             composable(
                 route = BottomNavScreen.Dashboard.route
             ) {
-                DashboardScreen(
-                    onAddSavingsClick = { goalId ->
-                        bottomNavController.navigate("add_savings/$goalId")
-                    }
-                )
+//                DashboardScreen(
+//                    onAddSavingsClick = { goalId ->
+//                        bottomNavController.navigate("add_savings/$goalId")
+//                    }
+//                )
             }
-            composable(
-                route = BottomNavScreen.Motivation.route
-            ) {
-                MotivationScreen()
-            }
+//            composable(
+//                route = BottomNavScreen.Motivation.route
+//            ) {
+////                MotivationScreen()
+//            }
             composable(
                 route = BottomNavScreen.Profile.route
             ) {
-                ProfileScreen(onLogout =logout)
+//                ProfileScreen(onLogout = logout)
             }
 
 
@@ -111,10 +104,10 @@ fun MainScreen(
                 )
             ) { backStackEntry ->
                 val goalId = backStackEntry.arguments?.getString("goalId")
-                AddSavingScreen(
-                    navController = bottomNavController,
-                    goalId = goalId
-                )
+//                AddSavingScreen(
+//                    navController = bottomNavController,
+//                    goalId = goalId
+//                )
             }
         }
     }
