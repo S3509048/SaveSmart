@@ -55,9 +55,6 @@ fun ProfileScreen(
 
     val updateUsernameState = viewModel.updateUsernameState
 
-    val currentCurrency by viewModel.currentCurrency.collectAsState()
-
-
     // Track username for refresh
     var displayName by remember { mutableStateOf(currentUser?.displayName ?: "User") }
 
@@ -324,7 +321,7 @@ fun ProfileScreen(
             onDismiss = {
                 if (!createGoalState.isLoading) {
                     showCreateGoalDialog = false
-//                    viewModel.resetCreateForm()
+                    viewModel.resetCreateForm()
                 }
             },
             goalTitle = viewModel.goalTitle,
@@ -336,12 +333,12 @@ fun ProfileScreen(
             errorMessage = createGoalState.error,
             isLoading = createGoalState.isLoading,
             onCreateClick = {
-//                viewModel.createGoal {
-//                    popBack()
-//                    // Success handled in LaunchedEffect
-//                }
+                viewModel.createGoal {
+                    popBack()
+                    // Success handled in LaunchedEffect
+                }
             },
-            currentCurrency = currentCurrency
+            currentCurrency = viewModel.currentCurrency
         )
     }
     // Currency Update Dialog

@@ -16,11 +16,11 @@ sealed class BottomNavScreen(val route: String, val title: String, val icon: Ima
     )
 
 
-//    object Motivation : BottomNavScreen(
-//        route = "motivation",
-//        title = "Motivation",
-//        icon = Icons.Default.FormatQuote
-//    )
+    object Motivation : BottomNavScreen(
+        route = "motivation",
+        title = "Motivation",
+        icon = Icons.Default.FormatQuote
+    )
 
     object Profile : BottomNavScreen(
         route = "profile",
@@ -36,6 +36,6 @@ sealed class BottomNavScreen(val route: String, val title: String, val icon: Ima
 
 val bottomNavScreens = listOf(
     BottomNavScreen.Dashboard,
-//    BottomNavScreen.Motivation,
+    BottomNavScreen.Motivation,
     BottomNavScreen.Profile,
 )

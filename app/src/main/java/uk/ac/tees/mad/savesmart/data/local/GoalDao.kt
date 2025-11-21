@@ -25,11 +25,11 @@ interface GoalDao {
     suspend fun getGoals(userId: String): List<GoalEntity>
 
     // Get single goal
-    @Query("SELECT * FROM goals_cache WHERE goalId = :goalId LIMIT 1")
+    @Query("SELECT * FROM goals_cache WHERE id = :goalId LIMIT 1")
     suspend fun getGoal(goalId: String): GoalEntity?
 
     // Update current amount
-    @Query("UPDATE goals_cache SET currentAmount = :newAmount, updatedAt = :timestamp, isSynced = :synced WHERE goalId = :goalId")
+    @Query("UPDATE goals_cache SET currentAmount = :newAmount, updatedAt = :timestamp, isSynced = :synced WHERE id = :goalId")
     suspend fun updateGoalAmount(goalId: String, newAmount: Double, timestamp: Long, synced: Boolean = true)
 
     // Update currency for all goals
@@ -37,7 +37,7 @@ interface GoalDao {
     suspend fun updateCurrency(userId: String, currency: String)
 
     // Delete goal
-    @Query("DELETE FROM goals_cache WHERE goalId = :goalId")
+    @Query("DELETE FROM goals_cache WHERE id = :goalId")
     suspend fun deleteGoal(goalId: String)
 
     // Delete all goals (for logout)
