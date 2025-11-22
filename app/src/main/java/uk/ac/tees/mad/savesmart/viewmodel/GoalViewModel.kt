@@ -282,14 +282,14 @@ class GoalViewModel @Inject constructor(
         viewModelScope.launch {
             updateUsernameState = updateUsernameState.copy(isLoading = true, error = null)
             try {
-                val currentUser = firebaseAuth.currentUser
-                    ?: throw Exception("User not logged in")
-
                 preferencesManager.saveUserName(trimmedUsername)
-
                 val profileUpdates = UserProfileChangeRequest.Builder()
                     .setDisplayName(trimmedUsername)
                     .build()
+                val currentUser = firebaseAuth.currentUser
+                    ?: throw Exception("User not logged in")
+
+
 
                 currentUser.updateProfile(profileUpdates).await()
 

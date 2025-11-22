@@ -60,11 +60,11 @@ fun SignUpScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(BackgroundLight, Color.White)
-                )
-            )
+//            .background(
+//                Brush.verticalGradient(
+//                    colors = listOf(BackgroundLight, Color.White)
+//                )
+//            )
     ) {
         Column(
             modifier = Modifier
@@ -103,7 +103,33 @@ fun SignUpScreen(
             )
 
             Spacer(modifier = Modifier.height(32.dp))
+            // Name Field
+            OutlinedTextField(
+                value = viewModel.name,
+                onValueChange = { viewModel.updateName(it) },
+                label = { Text("Full Name") },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Name",
+                        tint = PrimaryGreen
+                    )
+                },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.Next
+                ),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = PrimaryGreen,
+                    focusedLabelColor = PrimaryGreen,
+                    cursorColor = PrimaryGreen
+                ),
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            )
 
+            Spacer(modifier = Modifier.height(16.dp))
             // Email Field
             OutlinedTextField(
                 value = viewModel.email,
@@ -132,33 +158,7 @@ fun SignUpScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Name Field
-            OutlinedTextField(
-                value = viewModel.name,
-                onValueChange = { viewModel.updateName(it) },
-                label = { Text("Full Name") },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = "Name",
-                        tint = PrimaryGreen
-                    )
-                },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Next
-                ),
-                singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = PrimaryGreen,
-                    focusedLabelColor = PrimaryGreen,
-                    cursorColor = PrimaryGreen
-                ),
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            )
 
-            Spacer(modifier = Modifier.height(16.dp))
 
             // Password Field
             OutlinedTextField(

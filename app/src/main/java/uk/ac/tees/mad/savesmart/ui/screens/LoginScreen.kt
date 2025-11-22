@@ -86,11 +86,11 @@ fun LoginScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(BackgroundLight, Color.White)
-                )
-            )
+//            .background(
+//                Brush.verticalGradient(
+//                    colors = listOf(BackgroundLight, Color.White)
+//                )
+//            )
     ) {
         Column(
             modifier = Modifier

@@ -46,6 +46,10 @@ fun ProfileScreen(
     onLogout: () -> Unit = {},
     viewModel: GoalViewModel = hiltViewModel()
 ) {
+
+    val currentTheme by viewModel.currentTheme.collectAsState()
+
+
     val context = LocalContext.current
     val currentUser = FirebaseAuth.getInstance().currentUser
     var showCreateGoalDialog by remember { mutableStateOf(false) }
@@ -61,6 +65,9 @@ fun ProfileScreen(
 
     val dashboardState by viewModel.dashboardState.collectAsState()
 
+    //  Get currency from DataStore (reactive)
+    val currentCurrency by viewModel.currentCurrency.collectAsState()
+
     // Handle username update success
     LaunchedEffect(updateUsernameState.isSuccess) {
         if (updateUsernameState.isSuccess) {
@@ -75,17 +82,18 @@ fun ProfileScreen(
         if (createGoalState.isSuccess) {
             showCreateGoalDialog = false
             Toast.makeText(context, "Goal created successfully!", Toast.LENGTH_SHORT).show()
+            viewModel.resetCreateGoalSuccess()
         }
     }
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(BackgroundLight, Color.White)
-                )
-            )
+//            .background(
+//                Brush.verticalGradient(
+//                    colors = listOf(BackgroundLight, Color.White)
+//                )
+//            )
     ) {
         Column(
             modifier = Modifier
@@ -257,11 +265,17 @@ fun ProfileScreen(
                     Divider(color = Color.LightGray.copy(alpha = 0.3f))
 
                     SettingItem(
-                        icon = Icons.Default.DarkMode,
+                        icon = if (currentTheme == "dark") Icons.Default.DarkMode else Icons.Default.LightMode ,
                         title = "Theme",
-                        subtitle = "Light mode",
+                        subtitle = if (currentTheme == "dark") "Dark mode" else "Light mode",  // ✅ Shows current theme
                         onClick = {
-                            Toast.makeText(context, "Coming soon!", Toast.LENGTH_SHORT).show()
+                            viewModel.toggleTheme {
+                                Toast.makeText(
+                                    context,
+                                    "Theme switched to ${if (currentTheme == "dark") "dark" else "light"} mode",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
                         }
                     )
                 }
@@ -321,7 +335,7 @@ fun ProfileScreen(
             onDismiss = {
                 if (!createGoalState.isLoading) {
                     showCreateGoalDialog = false
-                    viewModel.resetCreateForm()
+//                    viewModel.resetCreateForm()
                 }
             },
             goalTitle = viewModel.goalTitle,
@@ -333,12 +347,9 @@ fun ProfileScreen(
             errorMessage = createGoalState.error,
             isLoading = createGoalState.isLoading,
             onCreateClick = {
-                viewModel.createGoal {
-                    popBack()
-                    // Success handled in LaunchedEffect
-                }
+                viewModel.createGoal ()
             },
-            currentCurrency = viewModel.currentCurrency
+            currentCurrency = currentCurrency
         )
     }
     // Currency Update Dialog
@@ -514,7 +525,7 @@ private fun CurrencyUpdateDialog(
                 Text(
                     "This will update currency for all ${goals.size} goal${if (goals.size != 1) "s" else ""}.",
                     fontSize = 14.sp,
-                    color = TextDark
+                    color = MaterialTheme.colorScheme.primary
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))

@@ -1,6 +1,5 @@
 package uk.ac.tees.mad.savesmart.ui.screens.components.profile_screen
 
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,7 +13,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -23,14 +21,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-
-// Colors
-private val PrimaryGreen = Color(0xFF4CAF50)
-private val SecondaryGreen = Color(0xFF81C784)
-private val DarkGreen = Color(0xFF2E7D32)
-private val TextDark = Color(0xFF212121)
-private val TextLight = Color(0xFF757575)
-private val ErrorRed = Color(0xFFD32F2F)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,6 +37,13 @@ fun CreateGoalDialog(
     onCreateClick: () -> Unit,
     currentCurrency: String = "GBP"
 ) {
+    // ✅ Get theme colors
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val onPrimaryColor = MaterialTheme.colorScheme.onPrimary
+    val surfaceColor = MaterialTheme.colorScheme.surface
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
+    val errorColor = MaterialTheme.colorScheme.error
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(
@@ -61,16 +58,15 @@ fun CreateGoalDialog(
                 .fillMaxHeight(0.85f),
             shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(
-                containerColor = Color.White
+                containerColor = surfaceColor  // ✅ Theme-aware
             )
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
+                modifier = Modifier.fillMaxSize()
             ) {
                 // Header
                 Surface(
-                    color = PrimaryGreen,
+                    color = primaryColor,  // ✅ Theme-aware
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
@@ -81,12 +77,12 @@ fun CreateGoalDialog(
                             text = "Create New Goal",
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = onPrimaryColor  // ✅ Theme-aware
                         )
                         Text(
                             text = "Set your savings target",
                             fontSize = 14.sp,
-                            color = Color.White.copy(alpha = 0.9f)
+                            color = onPrimaryColor.copy(alpha = 0.9f)  // ✅ Theme-aware
                         )
                     }
                 }
@@ -108,7 +104,7 @@ fun CreateGoalDialog(
                             Icon(
                                 imageVector = Icons.Default.Label,
                                 contentDescription = null,
-                                tint = PrimaryGreen
+                                tint = primaryColor  // ✅ Theme-aware
                             )
                         },
                         keyboardOptions = KeyboardOptions(
@@ -117,9 +113,9 @@ fun CreateGoalDialog(
                         ),
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = PrimaryGreen,
-                            focusedLabelColor = PrimaryGreen,
-                            cursorColor = PrimaryGreen
+                            focusedBorderColor = primaryColor,  // ✅ Theme-aware
+                            focusedLabelColor = primaryColor,
+                            cursorColor = primaryColor
                         ),
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
@@ -138,19 +134,18 @@ fun CreateGoalDialog(
                             Icon(
                                 imageVector = Icons.Default.AttachMoney,
                                 contentDescription = null,
-                                tint = PrimaryGreen
+                                tint = primaryColor  // ✅ Theme-aware
                             )
                         },
-//                        prefix = { Text("£") },
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Decimal,
                             imeAction = ImeAction.Next
                         ),
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = PrimaryGreen,
-                            focusedLabelColor = PrimaryGreen,
-                            cursorColor = PrimaryGreen
+                            focusedBorderColor = primaryColor,
+                            focusedLabelColor = primaryColor,
+                            cursorColor = primaryColor
                         ),
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
@@ -169,19 +164,18 @@ fun CreateGoalDialog(
                             Icon(
                                 imageVector = Icons.Default.AccountBalance,
                                 contentDescription = null,
-                                tint = PrimaryGreen
+                                tint = primaryColor  // ✅ Theme-aware
                             )
                         },
-//                        prefix = { Text("£") },
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Decimal,
                             imeAction = ImeAction.Done
                         ),
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = PrimaryGreen,
-                            focusedLabelColor = PrimaryGreen,
-                            cursorColor = PrimaryGreen
+                            focusedBorderColor = primaryColor,
+                            focusedLabelColor = primaryColor,
+                            cursorColor = primaryColor
                         ),
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
@@ -191,7 +185,7 @@ fun CreateGoalDialog(
                     Text(
                         text = "Leave blank if starting from zero",
                         fontSize = 11.sp,
-                        color = TextLight,
+                        color = onSurfaceColor.copy(alpha = 0.6f),  // ✅ Theme-aware
                         modifier = Modifier.padding(start = 16.dp, top = 4.dp)
                     )
 
@@ -200,7 +194,7 @@ fun CreateGoalDialog(
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
                             text = errorMessage,
-                            color = ErrorRed,
+                            color = errorColor,  // ✅ Theme-aware
                             fontSize = 13.sp,
                             modifier = Modifier.fillMaxWidth(),
                             textAlign = TextAlign.Start
@@ -226,7 +220,7 @@ fun CreateGoalDialog(
                 }
 
                 // Action Buttons
-                Divider(color = Color.LightGray.copy(alpha = 0.3f))
+                HorizontalDivider(color = onSurfaceColor.copy(alpha = 0.1f))  // ✅ Theme-aware
 
                 Row(
                     modifier = Modifier
@@ -253,14 +247,14 @@ fun CreateGoalDialog(
                             .weight(1f)
                             .height(50.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = PrimaryGreen
+                            containerColor = primaryColor  // ✅ Theme-aware
                         ),
                         shape = RoundedCornerShape(12.dp),
                         enabled = !isLoading && goalTitle.isNotEmpty() && targetAmount.isNotEmpty()
                     ) {
                         if (isLoading) {
                             CircularProgressIndicator(
-                                color = Color.White,
+                                color = onPrimaryColor,  // ✅ Theme-aware
                                 modifier = Modifier.size(20.dp),
                                 strokeWidth = 2.dp
                             )
@@ -282,8 +276,12 @@ private fun GoalPreviewCard(
     title: String,
     targetAmount: Double,
     startingAmount: Double,
-    currency: String = "GBP" // Add currency parameter
+    currency: String = "GBP"
 ) {
+    // ✅ Get theme colors
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
+
     // Get currency symbol
     val symbol = when (currency) {
         "GBP" -> "£"
@@ -292,10 +290,11 @@ private fun GoalPreviewCard(
         "INR" -> "₹"
         else -> currency
     }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = SecondaryGreen.copy(alpha = 0.1f)
+            containerColor = primaryColor.copy(alpha = 0.1f)  // ✅ Theme-aware
         ),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -306,7 +305,7 @@ private fun GoalPreviewCard(
                 text = "Preview",
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
-                color = DarkGreen
+                color = primaryColor  // ✅ Theme-aware
             )
 
             Spacer(modifier = Modifier.height(10.dp))
@@ -315,7 +314,7 @@ private fun GoalPreviewCard(
                 text = title,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                color = TextDark
+                color = onSurfaceColor  // ✅ Theme-aware
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -327,8 +326,8 @@ private fun GoalPreviewCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(6.dp),
-                color = PrimaryGreen,
-                trackColor = SecondaryGreen.copy(alpha = 0.3f),
+                color = primaryColor,  // ✅ Theme-aware
+                trackColor = primaryColor.copy(alpha = 0.3f),  // ✅ Theme-aware
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -340,25 +339,15 @@ private fun GoalPreviewCard(
                 Text(
                     text = "$symbol%.2f".format(startingAmount),
                     fontSize = 13.sp,
-                    color = TextDark
+                    color = onSurfaceColor  // ✅ Theme-aware
                 )
                 Text(
                     text = "$symbol%.2f".format(targetAmount),
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
-                    color = DarkGreen
+                    color = primaryColor  // ✅ Theme-aware
                 )
             }
-
-//            val remaining = targetAmount - startingAmount
-//            if (remaining > 0) {
-//                Text(
-//                    text = "$symbol%.2f remaining",
-//                    fontSize = 11.sp,
-//                    color = TextLight,
-//                    modifier = Modifier.padding(top = 4.dp)
-//                )
-//            }
         }
     }
 }
