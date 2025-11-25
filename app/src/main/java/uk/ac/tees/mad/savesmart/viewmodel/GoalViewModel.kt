@@ -47,6 +47,9 @@ class GoalViewModel @Inject constructor(
     private val preferencesManager: UserPreferencesManager
 ) : ViewModel() {
 
+    val notificationsEnabled: StateFlow<Boolean> = preferencesManager.notificationsEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.Eagerly, true)
+
     var createGoalState by mutableStateOf(CreateGoalState())
         private set
 
@@ -90,6 +93,16 @@ class GoalViewModel @Inject constructor(
         loadGoalsFromCache()
     }
 
+
+    fun toggleNotifications(enabled: Boolean) {
+        viewModelScope.launch {
+            try {
+                preferencesManager.setNotificationsEnabled(enabled)
+            } catch (e: Exception) {
+                // Handle error if needed
+            }
+        }
+    }
 
     fun refreshGoals() {
         viewModelScope.launch {
