@@ -1,8 +1,13 @@
 package uk.ac.tees.mad.savesmart.ui.screens
 
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -14,15 +19,9 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import uk.ac.tees.mad.savesmart.navigation.bottom_navigation.BottomNavScreen
 import uk.ac.tees.mad.savesmart.navigation.bottom_navigation.bottomNavScreens
-import uk.ac.tees.mad.savesmart.ui.screens.bottom_screens.AddSavingScreen
 import uk.ac.tees.mad.savesmart.ui.screens.bottom_screens.DashboardScreen
-import uk.ac.tees.mad.savesmart.ui.screens.bottom_screens.MotivationScreen
 import uk.ac.tees.mad.savesmart.ui.screens.bottom_screens.ProfileScreen
 import uk.ac.tees.mad.savesmart.viewmodel.GoalViewModel
-import uk.ac.tees.mad.savesmart.viewmodel.SavingsViewModel
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
-import android.content.Context
 
 @Composable
 fun MainScreen(
@@ -36,7 +35,7 @@ fun MainScreen(
 
     val context = LocalContext.current
     val goalViewModel = hiltViewModel<GoalViewModel>()
-    val savingViewModel = hiltViewModel<SavingsViewModel>()
+//    val savingViewModel = hiltViewModel<SavingsViewModel>()
 
     // ✅ Auto-sync when app resumes with internet
     val isOnline = remember { mutableStateOf(isNetworkAvailable(context)) }
@@ -96,7 +95,7 @@ fun MainScreen(
             composable(
                 route = BottomNavScreen.Motivation.route
             ) {
-                MotivationScreen()
+//                MotivationScreen()
             }
             composable(
                 route = BottomNavScreen.Profile.route
@@ -120,11 +119,11 @@ fun MainScreen(
                 )
             ) { backStackEntry ->
                 val goalId = backStackEntry.arguments?.getString("goalId")
-                AddSavingScreen(
-                    navController = bottomNavController,
-                    goalId = goalId,
-                    viewModel = savingViewModel
-                )
+//                AddSavingScreen(
+//                    navController = bottomNavController,
+//                    goalId = goalId,
+//                    viewModel = savingViewModel
+//                )
             }
         }
     }
@@ -132,7 +131,8 @@ fun MainScreen(
 
 //  Helper function to check network
 private fun isNetworkAvailable(context: Context): Boolean {
-    val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    val connectivityManager =
+        context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
     val network = connectivityManager.activeNetwork ?: return false
     val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
 

@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -211,15 +212,15 @@ fun DashboardScreen(
 @Composable
 private fun MotivationalQuoteBanner() {
     val quotes = listOf(
-        "Every penny saved is a penny earned! 💰",
-        "Small steps lead to big achievements! 🎯",
-        "Your financial future starts today! 🌟",
-        "Consistency is the key to success! 🔑",
-        "Save today, smile tomorrow! 😊"
+        "Every penny saved is a penny earned! ",
+        "Small steps lead to big achievements! ",
+        "Your financial future starts today! ",
+        "Consistency is the key to success! ",
+        "Save today, smile tomorrow! "
     )
 
     // Simple random quote (you can enhance this with API later)
-    val quote = remember { quotes.random() }
+    val quote = rememberSaveable { quotes.random() }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
