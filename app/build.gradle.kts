@@ -110,7 +110,4 @@ dependencies {
     implementation("androidx.hilt:hilt-work:1.2.0")
     kapt("androidx.hilt:hilt-compiler:1.2.0")
 
-    implementation("com.google.accompanist:accompanist-swiperefresh:0.32.0")
-
-
 }
