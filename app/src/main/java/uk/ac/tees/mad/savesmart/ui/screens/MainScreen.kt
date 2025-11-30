@@ -93,11 +93,11 @@ fun MainScreen(
                     }
                 )
             }
-            composable(
-                route = BottomNavScreen.Motivation.route
-            ) {
-                MotivationScreen()
-            }
+//            composable(
+//                route = BottomNavScreen.Motivation.route
+//            ) {
+//                MotivationScreen()
+//            }
             composable(
                 route = BottomNavScreen.Profile.route
             ) {

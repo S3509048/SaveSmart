@@ -26,6 +26,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.firebase.auth.FirebaseAuth
 import uk.ac.tees.mad.savesmart.ui.screens.components.profile_screen.CreateGoalDialog
+import uk.ac.tees.mad.savesmart.utils.NT
+import uk.ac.tees.mad.savesmart.utils.NotificationScheduler
 import uk.ac.tees.mad.savesmart.viewmodel.GoalViewModel
 
 
@@ -48,7 +50,7 @@ fun ProfileScreen(
 ) {
 
     val currentTheme by viewModel.currentTheme.collectAsState()
-
+    val notificationsEnabled by viewModel.notificationsEnabled.collectAsState()
 
     val context = LocalContext.current
     val currentUser = FirebaseAuth.getInstance().currentUser
@@ -241,16 +243,28 @@ fun ProfileScreen(
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column {
-//                    SettingItem(
-//                        icon = Icons.Default.Notifications,
-//                        title = "Notifications",
-//                        subtitle = "Manage reminder settings",
-//                        onClick = {
-//                            Toast.makeText(context, "Coming soon!", Toast.LENGTH_SHORT).show()
-//                        }
-//                    )
+                    SettingItem(
+                        icon = Icons.Default.Notifications,
+                        title = "Weekly Notifications",
+                        subtitle = if (notificationsEnabled) "Reminders enabled" else "Reminders disabled",
+                        trailingContent = {
+                            Switch(
+                                checked = notificationsEnabled,
+                                onCheckedChange = { enabled ->
+                                    viewModel.toggleNotifications(enabled)
+                                    NotificationScheduler.updateNotificationSchedule(context, enabled)
+                                    Toast.makeText(
+                                        context,
+                                        if (enabled) "Notifications enabled" else "Notifications disabled",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            )
+                        },
+                        onClick = {}
+                    )
 
-//                    Divider(color = Color.LightGray.copy(alpha = 0.3f))
+                    Divider(color = Color.LightGray.copy(alpha = 0.3f))
 
                     SettingItem(
                         icon = Icons.Default.AttachMoney,
@@ -394,6 +408,13 @@ fun ProfileScreen(
             isLoading = updateUsernameState.isLoading
         )
     }
+
+    // Testing Button
+//    Button(onClick = {
+//        NT.testNotificationNow(context)
+//    }) {
+//        Text("Test Notification Now")
+//    }
 }
 
 @Composable
@@ -592,7 +613,8 @@ private fun SettingItem(
     title: String,
     subtitle: String,
     onClick: () -> Unit,
-    isDestructive: Boolean = false
+    isDestructive: Boolean = false,
+    trailingContent: @Composable (() -> Unit)? = null
 ) {
     Surface(
         onClick = onClick,
@@ -627,12 +649,23 @@ private fun SettingItem(
                 )
             }
 
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = TextLight,
-                modifier = Modifier.size(20.dp)
-            )
+//            Icon(
+//                imageVector = Icons.Default.ChevronRight,
+//                contentDescription = null,
+//                tint = TextLight,
+//                modifier = Modifier.size(20.dp)
+//            )
+            // Use custom trailing content or default chevron
+            if (trailingContent != null) {
+                trailingContent()
+            } else {
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = TextLight,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
         }
     }
 }
