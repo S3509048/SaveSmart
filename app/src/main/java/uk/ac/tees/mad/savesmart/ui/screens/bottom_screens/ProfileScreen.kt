@@ -527,7 +527,7 @@ private fun CurrencyUpdateDialog(
         "GBP" to "British Pound (£)",
         "USD" to "US Dollar ($)",
         "EUR" to "Euro (€)",
-        "INR" to "Indian Rupee (₹)"
+//        "INR" to "Indian Rupee (₹)"
     )
 
     var selectedCurrency by remember { mutableStateOf(currentCurrency) }

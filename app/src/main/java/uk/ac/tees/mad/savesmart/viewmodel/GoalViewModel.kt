@@ -13,6 +13,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import uk.ac.tees.mad.savesmart.data.api.FrankfurterApi
 import uk.ac.tees.mad.savesmart.data.local.GoalDao
 import uk.ac.tees.mad.savesmart.data.local.UserPreferencesManager
 import uk.ac.tees.mad.savesmart.data.local.toEntity
@@ -44,7 +45,8 @@ class GoalViewModel @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
     private val firestore: FirebaseFirestore,
     private val goalDao: GoalDao,
-    private val preferencesManager: UserPreferencesManager
+    private val preferencesManager: UserPreferencesManager,
+    private val frankfurterApi: FrankfurterApi  // ✅ Inject API for conversion
 ) : ViewModel() {
 
     val notificationsEnabled: StateFlow<Boolean> = preferencesManager.notificationsEnabledFlow
@@ -93,7 +95,6 @@ class GoalViewModel @Inject constructor(
         loadGoalsFromCache()
     }
 
-
     fun toggleNotifications(enabled: Boolean) {
         viewModelScope.launch {
             try {
@@ -112,11 +113,9 @@ class GoalViewModel @Inject constructor(
                 goals = goals,
                 isLoading = false
             )
-            println("✅ Manual refresh: ${goals.size} goals")
         }
     }
 
-    // ✅ FIXED: Always update state, even if empty
     private fun loadGoalsFromCache() {
         viewModelScope.launch {
             val userId = firebaseAuth.currentUser?.uid ?: return@launch
@@ -124,7 +123,6 @@ class GoalViewModel @Inject constructor(
             goalDao.getGoalsFlow(userId)
                 .map { entities -> entities.map { it.toGoal() } }
                 .collect { cachedGoals ->
-                    // ✅ Always update, even if empty
                     _dashboardState.value = _dashboardState.value.copy(
                         goals = cachedGoals,
                         isLoading = false
@@ -176,7 +174,6 @@ class GoalViewModel @Inject constructor(
         syncGoalsWithFirebase()
     }
 
-    // ✅ FIXED: Removed onSuccess callback
     fun createGoal() {
         if (!validateGoalInputs()) return
 
@@ -203,10 +200,8 @@ class GoalViewModel @Inject constructor(
                     updatedAt = Timestamp.now()
                 )
 
-                // Save to Room first
                 goalDao.insertGoal(goal.toEntity())
 
-                // Then sync to Firebase (don't wait)
                 launch {
                     try {
                         firestore.collection("goals")
@@ -218,12 +213,10 @@ class GoalViewModel @Inject constructor(
                     }
                 }
 
-                // ✅ Clear form FIRST
                 goalTitle = ""
                 targetAmount = ""
                 startingAmount = ""
 
-                // ✅ Then set success
                 createGoalState = createGoalState.copy(
                     isLoading = false,
                     isSuccess = true
@@ -238,6 +231,7 @@ class GoalViewModel @Inject constructor(
         }
     }
 
+    // ✅ UPDATED: Now converts actual amounts, not just symbol
     fun updateAllGoalsCurrency(newCurrency: String, onSuccess: () -> Unit) {
         viewModelScope.launch {
             _dashboardState.value = _dashboardState.value.copy(isLoading = true)
@@ -245,22 +239,75 @@ class GoalViewModel @Inject constructor(
                 val userId = firebaseAuth.currentUser?.uid
                     ?: throw Exception("User not logged in")
 
-                preferencesManager.saveCurrency(newCurrency)
-                goalDao.updateCurrency(userId, newCurrency)
+                val goals = _dashboardState.value.goals
 
-                val snapshot = firestore.collection("goals")
-                    .whereEqualTo("userId", userId)
-                    .get()
-                    .await()
+                if (goals.isEmpty()) {
+                    // No goals, just update preference
+                    preferencesManager.saveCurrency(newCurrency)
+                    _dashboardState.value = _dashboardState.value.copy(isLoading = false)
+                    onSuccess()
+                    return@launch
+                }
 
+                val oldCurrency = goals.first().currency
+
+                // ✅ If same currency, just return
+                if (oldCurrency == newCurrency) {
+                    _dashboardState.value = _dashboardState.value.copy(isLoading = false)
+                    onSuccess()
+                    return@launch
+                }
+
+                // ✅ Get conversion rate (using 1.0 as base amount)
+                val conversionResponse = frankfurterApi.convertCurrency(
+                    amount = 1.0,
+                    fromCurrency = oldCurrency,
+                    toCurrency = newCurrency
+                )
+
+                val conversionRate = conversionResponse.rates[newCurrency]
+                    ?: throw Exception("Failed to get conversion rate")
+
+                // ✅ Convert all goals with new amounts
+                val convertedGoals = goals.map { goal ->
+                    goal.copy(
+                        currency = newCurrency,
+                        currentAmount = goal.currentAmount * conversionRate,
+                        targetAmount = goal.targetAmount * conversionRate,
+                        updatedAt = Timestamp.now()
+                    )
+                }
+
+                // ✅ Update Room database
+                goalDao.insertGoals(convertedGoals.map { it.toEntity() })
+
+                // ✅ Update Firebase
                 val batch = firestore.batch()
-                snapshot.documents.forEach { doc ->
-                    batch.update(doc.reference, "currency", newCurrency)
+                convertedGoals.forEach { goal ->
+                    val goalRef = firestore.collection("goals").document(goal.id)
+                    batch.update(
+                        goalRef,
+                        mapOf(
+                            "currency" to goal.currency,
+                            "currentAmount" to goal.currentAmount,
+                            "targetAmount" to goal.targetAmount,
+                            "updatedAt" to goal.updatedAt
+                        )
+                    )
                 }
                 batch.commit().await()
 
-                loadGoals()
+                // ✅ Update preference
+                preferencesManager.saveCurrency(newCurrency)
+
+                // ✅ Refresh UI
+                _dashboardState.value = _dashboardState.value.copy(
+                    goals = convertedGoals,
+                    isLoading = false
+                )
+
                 onSuccess()
+
             } catch (e: Exception) {
                 _dashboardState.value = _dashboardState.value.copy(
                     isLoading = false,
@@ -301,8 +348,6 @@ class GoalViewModel @Inject constructor(
                     .build()
                 val currentUser = firebaseAuth.currentUser
                     ?: throw Exception("User not logged in")
-
-
 
                 currentUser.updateProfile(profileUpdates).await()
 
@@ -392,7 +437,6 @@ class GoalViewModel @Inject constructor(
         return true
     }
 
-    // ✅ FIXED: Only reset success flag
     fun resetCreateGoalSuccess() {
         createGoalState = createGoalState.copy(isSuccess = false)
     }
