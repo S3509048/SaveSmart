@@ -17,6 +17,8 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 class UserPreferencesManager @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
+
+    // data store to setup the user preferences
     private val dataStore = context.dataStore
 
     // Define preference keys

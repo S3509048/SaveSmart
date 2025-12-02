@@ -29,7 +29,7 @@ object MilestoneTracker {
             NotificationHelper.sendMilestoneNotification(
                 context = context,
                 goalTitle = goal.title,
-                percentage = milestone,
+//                percentage = milestone,
                 currentAmount = newAmount,
                 targetAmount = goal.targetAmount,
                 currency = goal.currency

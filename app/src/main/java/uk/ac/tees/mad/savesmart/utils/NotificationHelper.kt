@@ -6,10 +6,12 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import uk.ac.tees.mad.savesmart.R
 import uk.ac.tees.mad.savesmart.MainActivity
+import kotlin.math.log
 
 object NotificationHelper {
 
@@ -65,15 +67,24 @@ object NotificationHelper {
         }
     }
 
-    // Send milestone notification (25%, 50%, 75%, 100%)
+    // Send milestone notification (100%)
     fun sendMilestoneNotification(
         context: Context,
         goalTitle: String,
-        percentage: Int,
+//        percentage: Int,
         currentAmount: Double,
         targetAmount: Double,
         currency: String
     ) {
+
+        val percentage=(currentAmount / targetAmount * 100).toInt()
+        if(percentage<100){
+            return
+        }
+
+        Log.d("NH", "sendMilestoneNotification: ca $currentAmount")
+        Log.d("NH", "sendMilestoneNotification: ta $targetAmount")
+        Log.d("NH", "sendMilestoneNotification: per $percentage")
         val symbol = when (currency) {
             "GBP" -> "£"
             "USD" -> "$"
@@ -103,6 +114,7 @@ object NotificationHelper {
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
+
 
         val pendingIntent = PendingIntent.getActivity(
             context,
