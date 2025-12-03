@@ -46,7 +46,7 @@ class GoalViewModel @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val goalDao: GoalDao,
     private val preferencesManager: UserPreferencesManager,
-    private val frankfurterApi: FrankfurterApi  // ✅ Inject API for conversion
+    private val frankfurterApi: FrankfurterApi  //  Inject API for conversion
 ) : ViewModel() {
 
     val notificationsEnabled: StateFlow<Boolean> = preferencesManager.notificationsEnabledFlow
@@ -93,6 +93,7 @@ class GoalViewModel @Inject constructor(
 
     init {
         loadGoalsFromCache()
+        loadGoals()
     }
 
     fun toggleNotifications(enabled: Boolean) {
@@ -131,6 +132,99 @@ class GoalViewModel @Inject constructor(
         }
     }
 
+    //    private fun syncGoalsWithFirebase() {
+//        viewModelScope.launch {
+//            try {
+//                val userId = firebaseAuth.currentUser?.uid ?: return@launch
+//
+//                val snapshot = firestore.collection("goals")
+//                    .whereEqualTo("userId", userId)
+//                    .get()
+//                    .await()
+//
+//                val goals = snapshot.documents.mapNotNull { doc ->
+//                    try {
+//                        Goal.fromMap(doc.data ?: emptyMap())
+//                    } catch (e: Exception) {
+//                        null
+//                    }
+//                }.sortedByDescending { it.createdAt }
+//
+//                goalDao.insertGoals(goals.map { it.toEntity() })
+//
+//                if (goals.isNotEmpty()) {
+//                    preferencesManager.saveCurrency(goals.first().currency)
+//                }
+//
+//                _dashboardState.value = _dashboardState.value.copy(
+//                    goals = goals,
+//                    isLoading = false
+//                )
+//
+//            } catch (e: Exception) {
+//                _dashboardState.value = _dashboardState.value.copy(
+//                    isLoading = false,
+//                    error = e.message
+//                )
+//            }
+//        }
+//    }
+
+
+//    private fun syncGoalsWithFirebase() {
+//        viewModelScope.launch {
+//            try {
+//                val userId = firebaseAuth.currentUser?.uid ?: return@launch
+//
+//                val snapshot = firestore.collection("goals")
+//                    .whereEqualTo("userId", userId)
+//                    .get()
+//                    .await()
+//
+//                val firebaseGoals = snapshot.documents.mapNotNull { doc ->
+//                    try {
+//                        Goal.fromMap(doc.data ?: emptyMap())
+//                    } catch (e: Exception) {
+//                        null
+//                    }
+//                }.sortedByDescending { it.createdAt }
+//
+//                // Get existing local goals
+//                val localGoals = goalDao.getGoals(userId).map { it.toGoal() }
+//
+//                //  Merge: Keep local goals that aren't in Firebase yet
+//                val localOnlyGoals = localGoals.filter { local ->
+//                    firebaseGoals.none { it.id == local.id }
+//                }
+//
+//                //  Combine Firebase goals with local-only goals
+//                val mergedGoals = (firebaseGoals + localOnlyGoals)
+//                    .sortedByDescending { it.createdAt }
+//
+//                //  Now insert the merged list
+//                goalDao.insertGoals(mergedGoals.map { it.toEntity() })
+//
+//                if (mergedGoals.isNotEmpty()) {
+//                    preferencesManager.saveCurrency(mergedGoals.first().currency)
+//                }
+//
+//                _dashboardState.value = _dashboardState.value.copy(
+//                    goals = mergedGoals,
+//                    isLoading = false,
+//                    error = null
+//                )
+//
+//            } catch (e: Exception) {
+//                //  On error (like no internet), just stop loading
+//                // Don't modify the database or show error
+//                _dashboardState.value = _dashboardState.value.copy(
+//                    isLoading = false,
+//                    error = null  // Don't show error on refresh failure
+//                )
+//            }
+//        }
+//    }
+
     private fun syncGoalsWithFirebase() {
         viewModelScope.launch {
             try {
@@ -141,7 +235,7 @@ class GoalViewModel @Inject constructor(
                     .get()
                     .await()
 
-                val goals = snapshot.documents.mapNotNull { doc ->
+                val firebaseGoals = snapshot.documents.mapNotNull { doc ->
                     try {
                         Goal.fromMap(doc.data ?: emptyMap())
                     } catch (e: Exception) {
@@ -149,22 +243,159 @@ class GoalViewModel @Inject constructor(
                     }
                 }.sortedByDescending { it.createdAt }
 
-                goalDao.insertGoals(goals.map { it.toEntity() })
+                //  FIX: Keep entities to preserve sync status
+                val localGoalsEntities = goalDao.getGoals(userId)
 
-                if (goals.isNotEmpty()) {
-                    preferencesManager.saveCurrency(goals.first().currency)
+                //  Separate synced and unsynced local goals
+                val unsyncedLocalGoals = localGoalsEntities
+                    .filter { !it.isSynced }
+                    .map { it.toGoal() }
+
+                val syncedLocalGoalIds = localGoalsEntities
+                    .filter { it.isSynced }
+                    .map { it.goalId }
+                    .toSet()
+
+                //  Keep NEW local goals (not in Firebase at all)
+                val newLocalGoals = localGoalsEntities
+                    .filter { entity ->
+                        firebaseGoals.none { it.id == entity.goalId }
+                    }
+                    .map { it.toGoal() }
+
+                //  Merge: Unsynced local + New local + Firebase (but not ones that are unsynced locally)
+                val mergedGoals = (unsyncedLocalGoals + newLocalGoals +
+                        firebaseGoals.filter { fbGoal ->
+                            // Only take Firebase goals that aren't unsynced locally
+                            unsyncedLocalGoals.none { it.id == fbGoal.id }
+                        })
+                    .distinctBy { it.id }
+                    .sortedByDescending { it.createdAt }
+
+                //  Insert with preserved sync status
+                mergedGoals.forEach { goal ->
+                    val entity = goal.toEntity()
+                    val existingEntity = localGoalsEntities.find { it.goalId == goal.id }
+
+                    // Preserve sync status if exists locally
+                    if (existingEntity != null) {
+                        goalDao.insertGoal(entity.copy(isSynced = existingEntity.isSynced))
+                    } else {
+                        goalDao.insertGoal(entity.copy(isSynced = true)) // New from Firebase
+                    }
+                }
+
+                if (mergedGoals.isNotEmpty()) {
+                    preferencesManager.saveCurrency(mergedGoals.first().currency)
                 }
 
                 _dashboardState.value = _dashboardState.value.copy(
-                    goals = goals,
-                    isLoading = false
+                    goals = mergedGoals,
+                    isLoading = false,
+                    error = null
                 )
+
+                //  Sync unsynced goals to Firebase
+                syncUnsyncedGoalAmounts()
 
             } catch (e: Exception) {
                 _dashboardState.value = _dashboardState.value.copy(
                     isLoading = false,
-                    error = e.message
+                    error = null
                 )
+            }
+        }
+    }
+
+    private fun syncUnsyncedGoalAmounts() {
+        viewModelScope.launch {
+            try {
+                val unsyncedGoals = goalDao.getUnsyncedGoals()
+
+                if (unsyncedGoals.isEmpty()) {
+                    println(" All goal amounts already synced")
+                    return@launch
+                }
+
+                println("📤 Syncing ${unsyncedGoals.size} unsynced goal amount(s)...")
+
+                unsyncedGoals.forEach { goalEntity ->
+                    try {
+                        firestore.collection("goals")
+                            .document(goalEntity.goalId)
+                            .update(
+                                mapOf(
+                                    "currentAmount" to goalEntity.currentAmount,
+                                    "updatedAt" to Timestamp.now()
+                                )
+                            )
+                            .await()
+
+                        //  Mark as synced
+                        goalDao.updateGoalAmount(
+                            goalId = goalEntity.goalId,
+                            newAmount = goalEntity.currentAmount,
+                            timestamp = System.currentTimeMillis(),
+                            synced = true
+                        )
+
+                        println(" Synced goal amount: ${goalEntity.goalId}")
+                    } catch (e: Exception) {
+                        println("⚠️ Failed to sync goal ${goalEntity.goalId}: ${e.message}")
+                    }
+                }
+            } catch (e: Exception) {
+                println("⚠️ Goal amount sync failed: ${e.message}")
+            }
+        }
+    }
+
+
+
+    fun syncUnsyncedGoals() {
+        viewModelScope.launch {
+            try {
+                val userId = firebaseAuth.currentUser?.uid ?: return@launch
+                val localGoals = goalDao.getGoals(userId).map { it.toGoal() }
+
+                if (localGoals.isEmpty()) return@launch
+
+                // Get Firebase goal IDs to check what's missing
+                val snapshot = firestore.collection("goals")
+                    .whereEqualTo("userId", userId)
+                    .get()
+                    .await()
+
+                val firebaseGoalIds = snapshot.documents.map { it.id }.toSet()
+
+                // Find unsynced goals
+                val unsyncedGoals = localGoals.filter { it.id !in firebaseGoalIds }
+
+                if (unsyncedGoals.isEmpty()) {
+                    println(" All goals already synced")
+                    return@launch
+                }
+
+                println("📤 Syncing ${unsyncedGoals.size} unsynced goal(s)...")
+
+                // Sync each unsynced goal
+                unsyncedGoals.forEach { goal ->
+                    try {
+                        firestore.collection("goals")
+                            .document(goal.id)
+                            .set(goal.toMap())
+                            .await()
+                        println(" Synced goal: ${goal.title}")
+                    } catch (e: Exception) {
+                        println("⚠️ Failed to sync goal ${goal.id}: ${e.message}")
+                    }
+                }
+
+                // Refresh after syncing
+                loadGoals()
+
+            } catch (e: Exception) {
+                println("⚠️ Sync check failed: ${e.message}")
             }
         }
     }
@@ -231,7 +462,7 @@ class GoalViewModel @Inject constructor(
         }
     }
 
-    // ✅ UPDATED: Now converts actual amounts, not just symbol
+    //  UPDATED: Now converts actual amounts, not just symbol
     fun updateAllGoalsCurrency(newCurrency: String, onSuccess: () -> Unit) {
         viewModelScope.launch {
             _dashboardState.value = _dashboardState.value.copy(isLoading = true)
@@ -251,14 +482,14 @@ class GoalViewModel @Inject constructor(
 
                 val oldCurrency = goals.first().currency
 
-                // ✅ If same currency, just return
+                //  If same currency, just return
                 if (oldCurrency == newCurrency) {
                     _dashboardState.value = _dashboardState.value.copy(isLoading = false)
                     onSuccess()
                     return@launch
                 }
 
-                // ✅ Get conversion rate (using 1.0 as base amount)
+                //  Get conversion rate (using 1.0 as base amount)
                 val conversionResponse = frankfurterApi.convertCurrency(
                     amount = 1.0,
                     fromCurrency = oldCurrency,
@@ -268,7 +499,7 @@ class GoalViewModel @Inject constructor(
                 val conversionRate = conversionResponse.rates[newCurrency]
                     ?: throw Exception("Failed to get conversion rate")
 
-                // ✅ Convert all goals with new amounts
+                //  Convert all goals with new amounts
                 val convertedGoals = goals.map { goal ->
                     goal.copy(
                         currency = newCurrency,
@@ -278,10 +509,10 @@ class GoalViewModel @Inject constructor(
                     )
                 }
 
-                // ✅ Update Room database
+                // Update Room database
                 goalDao.insertGoals(convertedGoals.map { it.toEntity() })
 
-                // ✅ Update Firebase
+                //  Update Firebase
                 val batch = firestore.batch()
                 convertedGoals.forEach { goal ->
                     val goalRef = firestore.collection("goals").document(goal.id)
@@ -297,10 +528,10 @@ class GoalViewModel @Inject constructor(
                 }
                 batch.commit().await()
 
-                // ✅ Update preference
+                // Update preference
                 preferencesManager.saveCurrency(newCurrency)
 
-                // ✅ Refresh UI
+                //  Refresh UI
                 _dashboardState.value = _dashboardState.value.copy(
                     goals = convertedGoals,
                     isLoading = false

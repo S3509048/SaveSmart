@@ -56,6 +56,7 @@ fun AppNavigation(modifier: Modifier = Modifier) {
             MainScreen(
                 logout = {
                     viewModel.logout {
+                        // clear the database that is goal and deposits
                         // call back
                         navController.navigate(Screen.LoginScreen.route) {
                             popUpTo(0) {

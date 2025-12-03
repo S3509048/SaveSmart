@@ -248,7 +248,7 @@ class SavingsViewModel @Inject constructor(
                 depositNote = ""
                 conversionState = ConversionState()
 
-                // ✅ Set success state (will be caught by LaunchedEffect)
+                //  Set success state (will be caught by LaunchedEffect)
                 addSavingsState = addSavingsState.copy(
                     isLoading = false,
                     isSuccess = true,
@@ -313,7 +313,7 @@ class SavingsViewModel @Inject constructor(
 
                         depositDao.markAsSynced(deposit.id)
 
-                        println("✅ Synced deposit: ${deposit.id}")
+                        println(" Synced deposit: ${deposit.id}")
                     } catch (e: Exception) {
                         println("❌ Failed to sync deposit: ${depositEntity.id}")
                     }
@@ -334,9 +334,9 @@ class SavingsViewModel @Inject constructor(
                             )
                             .await()
 
-                        println("✅ Synced goal: ${goal.id}")
+                        println(" Synced goal: ${goal.id}")
                     } catch (e: Exception) {
-                        println("❌ Failed to sync goal: ${goalEntity.id}")
+                        println("❌ Failed to sync goal: ${goalEntity.goalId}")
                     }
                 }
             } catch (e: Exception) {
@@ -368,7 +368,7 @@ class SavingsViewModel @Inject constructor(
         return true
     }
 
-    // ✅ FIXED: Only reset success flag, not entire state
+    //  FIXED: Only reset success flag, not entire state
     fun resetSuccessState() {
         addSavingsState = addSavingsState.copy(isSuccess = false)
     }

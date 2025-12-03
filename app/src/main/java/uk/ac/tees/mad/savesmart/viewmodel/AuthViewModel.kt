@@ -10,6 +10,9 @@ import com.google.firebase.auth.userProfileChangeRequest
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import uk.ac.tees.mad.savesmart.data.local.DepositDao
+import uk.ac.tees.mad.savesmart.data.local.GoalDao
+import uk.ac.tees.mad.savesmart.data.local.UserPreferencesManager
 import javax.inject.Inject
 
 data class AuthState(
@@ -21,6 +24,9 @@ data class AuthState(
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
+    private val goalDao: GoalDao,        // Inject
+    private val depositDao: DepositDao,   //  Inject
+    private val preferencesManager: UserPreferencesManager
 ) : ViewModel() {
 
     var authState by mutableStateOf(AuthState())
@@ -184,6 +190,12 @@ class AuthViewModel @Inject constructor(
     fun logout(onSuccess: () -> Unit) {
         viewModelScope.launch {
             try {
+                val userId=firebaseAuth.currentUser?.uid
+                if(userId!=null){
+                    goalDao.deleteAllGoals(userId)
+                    depositDao.deleteAllDeposits(userId)
+                }
+                preferencesManager.clearAllPreferences()
                 firebaseAuth.signOut()
                 resetState() // Clears local state
                 onSuccess()

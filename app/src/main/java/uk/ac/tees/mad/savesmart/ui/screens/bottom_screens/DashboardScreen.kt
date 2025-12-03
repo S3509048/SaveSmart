@@ -25,6 +25,7 @@ import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import uk.ac.tees.mad.savesmart.data.model.Goal
 import uk.ac.tees.mad.savesmart.ui.screens.components.profile_screen.CreateGoalDialog
+import uk.ac.tees.mad.savesmart.ui.screens.isNetworkAvailable
 import uk.ac.tees.mad.savesmart.viewmodel.GoalViewModel
 import java.util.Calendar
 
@@ -43,10 +44,16 @@ fun DashboardScreen(
     onAddSavingsClick: (String) -> Unit = {},
     viewModel: GoalViewModel = hiltViewModel()
 ) {
+//    val context = LocalContext.current
+
     val context = LocalContext.current
+    var isOnline by remember { mutableStateOf(isNetworkAvailable(context)) }
     val state by viewModel.dashboardState.collectAsState()
     var showCreateGoalDialog by remember { mutableStateOf(false) }
     val createGoalState = viewModel.createGoalState
+
+
+
 
     val currentCurrency by viewModel.currentCurrency.collectAsState()
 
@@ -57,6 +64,9 @@ fun DashboardScreen(
     // Load goals when screen opens
     LaunchedEffect(Unit) {
         viewModel.refreshGoals()
+        if (isNetworkAvailable(context)) {
+            viewModel.syncUnsyncedGoals()
+        }
     }
 
     // Handle goal creation success
@@ -72,7 +82,19 @@ fun DashboardScreen(
         // Wrap content in SwipeRefresh
         SwipeRefresh(
             state = swipeRefreshState,
-            onRefresh = { viewModel.loadGoals() }
+            onRefresh = {
+                isOnline = isNetworkAvailable(context)
+                if (isOnline) {
+                    viewModel.loadGoals()
+                    viewModel.syncUnsyncedGoals()
+                } else {
+                    Toast.makeText(
+                        context,
+                        "You're offline. Showing cached data.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
         ) {
             when {
                 state.isLoading && state.goals.isEmpty() -> {
@@ -123,7 +145,7 @@ fun DashboardScreen(
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        // ✅ Motivational Quote Banner
+                        //  Motivational Quote Banner
                         item {
                             MotivationalQuoteBanner()
                         }
@@ -265,7 +287,8 @@ private fun WeeklyProgressSummary(
     // Get current week info
     val calendar = Calendar.getInstance()
     val weekOfYear = calendar.get(Calendar.WEEK_OF_YEAR)
-    val currentMonth = calendar.getDisplayName(Calendar.MONTH, Calendar.LONG, java.util.Locale.getDefault())
+    val currentMonth =
+        calendar.getDisplayName(Calendar.MONTH, Calendar.LONG, java.util.Locale.getDefault())
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -312,7 +335,10 @@ private fun WeeklyProgressSummary(
             ) {
                 WeeklyStatItem(
                     label = "Total Saved",
-                    value = viewModel.formatCurrency(totalSaved, goals.firstOrNull()?.currency ?: "GBP"),
+                    value = viewModel.formatCurrency(
+                        totalSaved,
+                        goals.firstOrNull()?.currency ?: "GBP"
+                    ),
                     icon = Icons.Default.Savings
                 )
 

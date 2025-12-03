@@ -10,7 +10,6 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Money
 import androidx.compose.material.icons.filled.Note
@@ -180,7 +179,7 @@ fun AddSavingScreen(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 
-                    //  Currency Converter Section
+                //  Currency Converter Section
                 if (viewModel.depositAmount.isNotEmpty()) {
                     CurrencyConverterCard(
                         amount = viewModel.depositAmount,
@@ -308,7 +307,7 @@ private fun GoalInfoCard(
     goal: uk.ac.tees.mad.savesmart.data.model.Goal,
     viewModel: SavingsViewModel
 ) {
-    // ✅ Get theme colors
+    //  Get theme colors
     val primaryColor = MaterialTheme.colorScheme.primary
     val surfaceColor = MaterialTheme.colorScheme.surface
     val onSurfaceColor = MaterialTheme.colorScheme.onSurface
@@ -401,7 +400,7 @@ private fun PreviewCard(
     currency: String,
     viewModel: SavingsViewModel
 ) {
-    // ✅ Get theme colors
+    //  Get theme colors
     val primaryColor = MaterialTheme.colorScheme.primary
     val onSurfaceColor = MaterialTheme.colorScheme.onSurface
 

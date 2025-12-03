@@ -30,7 +30,7 @@ class Converters {
 
 fun Goal.toEntity(): GoalEntity {
     return GoalEntity(
-        id = this.id,
+        goalId  = this.id,
         userId = this.userId,
         title = this.title,
         targetAmount = this.targetAmount,
@@ -44,7 +44,7 @@ fun Goal.toEntity(): GoalEntity {
 
 fun GoalEntity.toGoal(): Goal {
     return Goal(
-        id = this.id,
+        id = this.goalId,
         userId = this.userId,
         title = this.title,
         targetAmount = this.targetAmount,

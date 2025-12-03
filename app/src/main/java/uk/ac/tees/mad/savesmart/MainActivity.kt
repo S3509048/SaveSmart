@@ -32,9 +32,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         // Request notification permission
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            requestNotificationPermission()
-        }
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+//            requestNotificationPermission()
+//        }
         setContent {
             val theme by preferencesManager.themeFlow.collectAsState(initial = "light")
 
@@ -48,18 +48,18 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-    private fun requestNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED
-            ) {
-                requestPermissions(
-                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                    100
-                )
-            }
-        }
-    }
+//    private fun requestNotificationPermission() {
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+//            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
+//                != PackageManager.PERMISSION_GRANTED
+//            ) {
+//                requestPermissions(
+//                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+//                    100
+//                )
+//            }
+//        }
+//    }
 }
 
 @Composable

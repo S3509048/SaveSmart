@@ -6,7 +6,7 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "goals_cache")
 data class GoalEntity(
     @PrimaryKey
-    val id: String,
+    val goalId: String,
     val userId: String,
     val title: String,
     val targetAmount: Double,

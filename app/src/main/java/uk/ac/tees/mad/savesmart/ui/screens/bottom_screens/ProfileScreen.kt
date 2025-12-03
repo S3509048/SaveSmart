@@ -57,6 +57,7 @@ fun ProfileScreen(
     var showCreateGoalDialog by remember { mutableStateOf(false) }
     var showCurrencyDialog by remember { mutableStateOf(false) }
     var showUpdateUsernameDialog by remember { mutableStateOf(false) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
     val createGoalState = viewModel.createGoalState
 
     val updateUsernameState = viewModel.updateUsernameState
@@ -333,7 +334,7 @@ fun ProfileScreen(
                         icon = Icons.Default.ExitToApp,
                         title = "Logout",
                         subtitle = "Sign out of your account",
-                        onClick = onLogout,
+                        onClick = { showLogoutDialog = true },
                         isDestructive = true
                     )
                 }
@@ -406,6 +407,15 @@ fun ProfileScreen(
             },
             errorMessage = updateUsernameState.error,
             isLoading = updateUsernameState.isLoading
+        )
+    }
+    if (showLogoutDialog) {
+        LogoutConfirmationDialog(
+            onDismiss = { showLogoutDialog = false },
+            onConfirmLogout = {
+                showLogoutDialog = false
+                onLogout()
+            }
         )
     }
 
@@ -513,6 +523,56 @@ private fun UpdateUsernameDialog(
         }
     )
 }
+
+@Composable
+private fun LogoutConfirmationDialog(
+    onDismiss: () -> Unit,
+    onConfirmLogout: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                imageVector = Icons.Default.ExitToApp,
+                contentDescription = null,
+                tint = ErrorRed,
+                modifier = Modifier.size(48.dp)
+            )
+        },
+        title = {
+            Text(
+                text = "Logout",
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+        },
+        text = {
+            Text(
+                text = "Are you sure you want to logout?",
+                fontSize = 14.sp,
+                color = TextLight,
+                textAlign = TextAlign.Center
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirmLogout,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = ErrorRed
+                )
+            ) {
+                Text("Logout")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = PrimaryGreen)
+            }
+        },
+        shape = RoundedCornerShape(16.dp)
+    )
+}
+
 
 
 @Composable

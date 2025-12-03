@@ -1,5 +1,6 @@
 package uk.ac.tees.mad.savesmart.ui.screens
 
+import android.Manifest
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,6 +24,9 @@ import uk.ac.tees.mad.savesmart.viewmodel.SavingsViewModel
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.content.Context
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 
 @Composable
 fun MainScreen(
@@ -38,7 +42,27 @@ fun MainScreen(
     val goalViewModel = hiltViewModel<GoalViewModel>()
     val savingViewModel = hiltViewModel<SavingsViewModel>()
 
-    // ✅ Auto-sync when app resumes with internet
+
+    // Request notification permission when MainScreen loads
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            // Permission granted - you can show a success message if needed
+        } else {
+            // Permission denied - handle accordingly
+        }
+    }
+
+
+    LaunchedEffect(Unit) {
+        // Request notification permission on Android 13+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
+    //  Auto-sync when app resumes with internet
     val isOnline = remember { mutableStateOf(isNetworkAvailable(context)) }
 
 //    LaunchedEffect(Unit) {
@@ -111,6 +135,7 @@ fun MainScreen(
             }
 
             // Add Savings Screen with argument
+            // Implemented the argument passing in the navigation screen
             composable(
                 route = "add_savings/{goalId}",
                 arguments = listOf(
@@ -131,7 +156,7 @@ fun MainScreen(
 }
 
 //  Helper function to check network
-private fun isNetworkAvailable(context: Context): Boolean {
+fun isNetworkAvailable(context: Context): Boolean {
     val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
     val network = connectivityManager.activeNetwork ?: return false
     val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
